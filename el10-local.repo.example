@@ -1,0 +1,5 @@
+[el10-local]
+name=WeTypeX EL10 local build repo
+baseurl=file:///home/psm/el10-repo
+enabled=0
+gpgcheck=0

@@ -1,0 +1,248 @@
+name: 发布
+run-name: WeTypeX release ${{ inputs.tag || github.ref_name }}${{ inputs.only_aur && ' (AUR only)' || '' }}${{ inputs.dry_run && ' (validation only)' || '' }}
+
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing GitHub Release tag to rebuild
+        required: true
+        type: string
+      only_aur:
+        description: Skip package builds and only publish AUR metadata
+        required: false
+        default: false
+        type: boolean
+      recover_run:
+        description: Reuse verified packages from this release workflow run; skip rebuilding
+        required: false
+        default: ""
+        type: string
+      dry_run:
+        description: Verify package provenance, metadata and checksums without publishing
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  arm64:
+    if: ${{ !inputs.only_aur && !inputs.recover_run }}
+    uses: ./.github/workflows/packages-arm64.yml
+    permissions:
+      contents: read
+    with:
+      ref: ${{ inputs.tag || github.ref_name }}
+  packages:
+    if: ${{ !inputs.only_aur && !inputs.recover_run }}
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+          persist-credentials: false
+
+      - uses: ./.github/actions/ubuntu-network
+
+      - name: 校验标签与源码版本
+        shell: bash
+        run: |
+          version=$(sed -n 's/^project([^ ]* VERSION \([^ ]*\).*/\1/p' CMakeLists.txt)
+          pkgrel=$(sed -n 's/^pkgrel=//p' packaging/PKGBUILD.in)
+          test "v${version}-${pkgrel}" = "${RELEASE_TAG}"
+
+      - name: 安装发布工具
+        run: sudo apt-get update && sudo apt-get install -y zstd
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version: stable
+          cache: false
+
+      - name: 安装 nFPM
+        run: |
+          go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.47.0
+          sudo install "$(go env GOPATH)/bin/nfpm" /usr/local/bin/nfpm
+
+      - name: 构建 Debian 与 Fedora 软件包
+        env:
+          WETYPEX_BUILD_JOBS: "2"
+          WETYPEX_DOCKER_NETWORK: host
+        run: packaging/build-native-packages.sh
+
+      - name: 生成源码包与 Arch 构建文件
+        run: python3 tools/package_release.py
+
+      - name: 构建 Arch Linux 软件包
+        shell: bash
+        run: |
+          docker run --rm --network host \
+            -e CMAKE_BUILD_PARALLEL_LEVEL=2 \
+            -v "$PWD:/src:ro" -v "$PWD/dist:/out" \
+            archlinux:base-devel bash -euc '
+              pacman -Syu --noconfirm git cmake clang boost fcitx5 fcitx5-qt libime libc++ \
+                json-c curl bubblewrap util-linux python python-fonttools python-pillow fontconfig qt6-base qt6-svg \
+                qt6-webengine layer-shell-qt pipewire ffmpeg wl-clipboard libnotify polkit
+              useradd -m builder
+              cp -a /src/dist/arch /tmp/arch
+              chown -R builder:builder /tmp/arch
+              su builder -c "cd /tmp/arch && makepkg -C -f --noconfirm"
+              cp /tmp/arch/fcitx5-wetypex-[0-9]*-x86_64.pkg.tar.zst /out/arch/
+            '
+
+      - name: 生成便携归档与校验和
+        shell: bash
+        run: |
+          version=${RELEASE_TAG#v}
+          test "$(dpkg-deb -f dist/debian/*.deb Version)" = "$version"
+          test "$(dpkg-deb -f dist/ubuntu20/*.deb Version)" = "$version"
+          rpm_version=$(docker run --rm -v "$PWD/dist:/out:ro" wetypex-build-fedora \
+            bash -euc 'rpm -qp --queryformat "%{VERSION}-%{RELEASE}" /out/fedora/*.rpm')
+          test "$rpm_version" = "$version"
+          arch_version=$(tar --zstd -xOf dist/arch/*.pkg.tar.zst .PKGINFO | \
+            sed -n 's/^pkgver = //p')
+          test "$arch_version" = "$version"
+          tar --zstd -C dist/debian-root -cf \
+            "dist/fcitx5-wetypex-${version}-linux-x86_64.tar.zst" .
+
+      - name: 记录构建源码
+        run: |
+          git diff --exit-code HEAD
+          SOURCE_SHA=$(git rev-parse HEAD) python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          Path('dist/release-source-x86_64.json').write_text(json.dumps(dict(
+              schema=1, tag=os.environ['RELEASE_TAG'], commit=os.environ['SOURCE_SHA'],
+              architecture='x86_64', run_id=int(os.environ['GITHUB_RUN_ID']))))
+          PY
+
+      - name: 保存构建产物
+        uses: actions/upload-artifact@v7
+        with:
+          name: fcitx5-wetypex-x86_64-packages
+          path: |
+            dist/arch/fcitx5-wetypex-*-x86_64.pkg.tar.zst
+            dist/arch/fcitx5-wetypex-*.tar.gz
+            dist/debian/fcitx5-wetypex_*_amd64.deb
+            dist/ubuntu20/fcitx5-wetypex-legacy_*_amd64.deb
+            dist/fedora/fcitx5-wetypex-*.x86_64.rpm
+            dist/fcitx5-wetypex-*-linux-x86_64.tar.zst
+            dist/release-source-x86_64.json
+          if-no-files-found: error
+
+  release:
+    needs: [arm64, packages]
+    if: >-
+      ${{ always() && !inputs.only_aur &&
+          (inputs.recover_run ||
+           (needs.arm64.result == 'success' && needs.packages.result == 'success')) }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      # Publication control comes from the workflow revision, never from artifacts.
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/ubuntu-network
+      - name: 安装包元数据检查工具
+        run: sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends zstd rpm
+      - name: 校验并发布，或复用已构建的包恢复发布
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+          SOURCE_RUN: ${{ inputs.recover_run || github.run_id }}
+          DRY_RUN: ${{ inputs.dry_run || false }}
+        shell: bash
+        run: |
+          args=(--tag "$RELEASE_TAG" --run "$SOURCE_RUN" --directory "$RUNNER_TEMP/release-packages")
+          if [[ "$DRY_RUN" == true ]]; then args+=(--dry-run); fi
+          python3 tools/publish_release.py "${args[@]}"
+
+  aur:
+    needs: release
+    if: ${{ always() && !inputs.dry_run && (inputs.only_aur || needs.release.result == 'success') }}
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+      - name: 安装 AUR 发布工具
+        run: pacman -Syu --noconfirm curl git openssh
+      - name: 发布 AUR 元数据
+        env:
+          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+        run: |
+          version=$(sed -n 's/^project([^ ]* VERSION \([^ ]*\).*/\1/p' CMakeLists.txt)
+          revision=$(sed -n 's/^pkgrel=//p' packaging/PKGBUILD.in)
+          test "v$version-$revision" = "$RELEASE_TAG"
+          test -n "$AUR_SSH_PRIVATE_KEY"
+          useradd --create-home builder
+          install -d -o builder -g builder -m0700 /home/builder/.ssh
+          printf '%s\n' "$AUR_SSH_PRIVATE_KEY" > /home/builder/.ssh/aur
+          ssh-keyscan -H aur.archlinux.org > /home/builder/.ssh/known_hosts
+          chown builder:builder /home/builder/.ssh/aur /home/builder/.ssh/known_hosts
+          chmod 0600 /home/builder/.ssh/aur /home/builder/.ssh/known_hosts
+          git_ssh='ssh -i /home/builder/.ssh/aur -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=/home/builder/.ssh/known_hosts -o ConnectTimeout=20 -o ConnectionAttempts=3'
+          runuser -u builder -- env \
+            HOME=/home/builder \
+            GIT_SSH_COMMAND="$git_ssh" \
+            RELEASE_TAG="$RELEASE_TAG" \
+            GITHUB_REPOSITORY="$GITHUB_REPOSITORY" \
+            bash -lc '
+              set -euo pipefail
+              git clone ssh://aur@aur.archlinux.org/fcitx5-wetypex.git "$HOME/aur"
+              version=$(sed -n "s/^project([^ ]* VERSION \([^ ]*\).*/\1/p" "$1/CMakeLists.txt")
+              pkgrel=$(sed -n "s/^pkgrel=//p" "$1/packaging/PKGBUILD.in")
+              if [[ -f "$HOME/aur/PKGBUILD" ]]; then
+                published=$(sed -n "s/^pkgver=//p" "$HOME/aur/PKGBUILD")
+                revision=$(sed -n "s/^pkgrel=//p" "$HOME/aur/PKGBUILD")
+                if [[ $(vercmp "$version-$pkgrel" "$published-$revision") -lt 0 ]]; then
+                  echo "AUR already contains a newer version; keeping it."
+                  exit 0
+                fi
+              fi
+              cp "$1/packaging/aur/PKGBUILD" \
+                 "$1/packaging/aur/fcitx5-wetypex.install" "$HOME/aur/"
+              cd "$HOME/aur"
+              version=$(sed -n "s/^project([^ ]* VERSION \([^ ]*\).*/\1/p" "$1/CMakeLists.txt")
+              pkgrel=$(sed -n "s/^pkgrel=//p" "$1/packaging/PKGBUILD.in")
+              sed -i "s/^pkgver=.*/pkgver=$version/" PKGBUILD
+              sed -i "s/^pkgrel=.*/pkgrel=$pkgrel/" PKGBUILD
+              source_url="https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_TAG}/fcitx5-wetypex-${version}.tar.gz"
+              curl --retry 3 --retry-all-errors --connect-timeout 15 --max-time 300 \
+                --fail --location --show-error "$source_url" -o source.tar.gz
+              digest="$(sha256sum source.tar.gz | cut -d" " -f1)"
+              expected="$(curl --retry 3 --retry-all-errors --connect-timeout 15 --max-time 300 \
+                --fail --location --show-error \
+                "https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_TAG}/SHA256SUMS" | \
+                awk -v file="fcitx5-wetypex-${version}.tar.gz" '\''$2 == file { print $1 }'\'')"
+              test "$digest" = "$expected"
+              rm source.tar.gz
+              sed -i "s/^sha256sums=(\"SKIP\" /sha256sums=(\"$digest\" /" PKGBUILD
+              makepkg --printsrcinfo > .SRCINFO
+              git config user.name wetypex-release-bot
+              git config user.email actions@users.noreply.github.com
+              git add PKGBUILD fcitx5-wetypex.install .SRCINFO
+              if git diff --cached --quiet; then
+                echo "AUR metadata is already current"
+                exit 0
+              fi
+              git commit -m "fcitx5-wetypex $version-$pkgrel"
+              git push
+            ' _ "$GITHUB_WORKSPACE"

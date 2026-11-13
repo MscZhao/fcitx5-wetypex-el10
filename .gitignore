@@ -1,0 +1,8 @@
+# 构建产物：通过 GitHub Releases 分发，不进 git
+/el10-repo/
+/src-rpms/
+/dist/
+
+# 第三方静态二进制（复现构建时从上游下载）
+/wetypex-el10/tools/nfpm
+/wetypex-el10/tools/nfpm.tar.gz
