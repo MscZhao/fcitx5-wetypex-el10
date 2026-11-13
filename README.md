@@ -45,7 +45,7 @@ sudo ./wetypex-el10-bundle-3.0.1.684-6.el10.x86_64.run
 
 ### 方式 B：本地仓库
 
-从 Releases 下载 `el10-repo-*.tar.gz` 解压后：
+从 Releases 下载 `el10-repo-runtime-*.tar.gz` 解压后：
 
 ```bash
 sudo tee /etc/yum.repos.d/el10-local.repo <<'EOF'
