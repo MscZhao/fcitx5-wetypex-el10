@@ -95,6 +95,10 @@ createrepo_c ~/el10-repo && ./fcitx5-wetypex-el10/build-bundle.sh
 └── src-rpms/                  ← 源码 RPM（git 忽略，走 Releases）
 ```
 
+## 开发说明
+
+本项目由 msczhao 开发维护；EL10 打包调试、spec 编写、构建脚本与文档整理过程中使用了 AI 编程助手 **ZCode**（GLM 模型）辅助完成。
+
 ## 许可与声明
 
 - 本仓库的 spec、脚本、文档：[MIT](LICENSE)
