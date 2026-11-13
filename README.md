@@ -10,6 +10,8 @@ WeTypeX 由 [panxuc](https://github.com/panxuc) 开发，上游仓库：**https:
 
 本仓库仅做 EL10 平台的 RPM 打包与适配，不修改上游功能；问题反馈请区分：上游功能问题到原作者仓库提 Issue，本仓库只处理 EL10 打包问题。
 
+上游源码以 **git submodule** 引入（`fcitx5-wetypex-el10/fcitx5-wetypex`），钉在本次构建所用的 commit `06798d6`（v3.0.1.684 系列）。
+
 ## 产出（8 包链条，全部构建 + 验证通过）
 
 | # | 包 | 版本 | 说明 |
@@ -67,6 +69,9 @@ sudo dnf install fcitx5-wetypex fcitx5-configtool fcitx5-gtk
 在装好工具链的 EL10 机器上（前置：EPEL10+CRB 仓库、gcc/cmake/ninja/rpmbuild/clang 21、KF6 全套 devel 等；源码下载可走代理）：
 
 ```bash
+# 0. 克隆本仓库并拉取上游 submodule（WeTypeX 源码）
+git clone --recurse-submodules <本仓库地址>
+#    已克隆过：git submodule update --init
 # 1. 源码 tarball 放 ~/rpmbuild/SOURCES/，按链条构建：
 #    xcb-imdkit → libcxx → fcitx5 → (fcitx5-qt | fcitx5-gtk | libime) → configtool
 for s in xcb-imdkit libcxx fcitx5 fcitx5-qt fcitx5-gtk libime fcitx5-configtool; do
@@ -85,7 +90,7 @@ createrepo_c ~/el10-repo && ./fcitx5-wetypex-el10/build-bundle.sh
 ├── fcitx5-wetypex-el10/      ← 工作树（git 主体）
 │   ├── specs/                 ← 7 个已沉淀修正的 RPM spec
 │   ├── build-bundle.sh        ← 一键安装包构建脚本（可复现）
-│   └── fcitx5-wetypex/        ← 上游 WeTypeX v3.0.1.684 源码快照（vendored，MIT）
+│   └── fcitx5-wetypex/        ← 上游源码（git submodule → panxuc/fcitx5-wetypex，MIT）
 ├── el10-repo/                 ← 本地构建产物（git 忽略，走 Releases）
 └── src-rpms/                  ← 源码 RPM（git 忽略，走 Releases）
 ```
@@ -93,6 +98,6 @@ createrepo_c ~/el10-repo && ./fcitx5-wetypex-el10/build-bundle.sh
 ## 许可与声明
 
 - 本仓库的 spec、脚本、文档：[MIT](LICENSE)
-- vendored 的 `fcitx5-wetypex-el10/fcitx5-wetypex/` 源码：上游 [panxuc/fcitx5-wetypex](https://github.com/panxuc/fcitx5-wetypex) 的 MIT 许可，随快照保留其 LICENSE 与 NOTICE
+- 上游源码 submodule `fcitx5-wetypex-el10/fcitx5-wetypex`：[panxuc/fcitx5-wetypex](https://github.com/panxuc/fcitx5-wetypex) 的 MIT 许可，其 LICENSE 与 NOTICE 随上游仓库保留
 - **本仓库不包含、不分发腾讯 WeType（微信输入法）的任何专有二进制、词典、模型或资源**；运行时由用户在安装时通过 `fcitx5-wetypex-setup --download` 自行从官方渠道获取
 - WeTypeX 是非官方第三方项目，与腾讯公司无任何关联或背书关系；"微信""微信输入法"相关商标归腾讯所有，仅供个人学习交流使用
