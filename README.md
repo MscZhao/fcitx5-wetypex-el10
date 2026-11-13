@@ -3,8 +3,6 @@
 在 EL10（AlmaLinux / Rocky Linux / RHEL / CentOS Stream 10）上**原生构建的 fcitx5 全链 RPM**，以及 [WeTypeX](https://github.com/panxuc/fcitx5-wetypex)（微信输入法兼容层）的一键安装包。
 
 > 背景：EPEL 10 完全没有 fcitx5 生态包。本项目在 AlmaLinux 10.2 x86_64 上从源码构建整套 `.el10` RPM，让 WeTypeX（MIT 适配器 + 用户自行下载的腾讯 WeType 运行时）能在 EL10 系发行版上通过 Fcitx5 正常使用。
->
-> 完整交接文档见 [fcitx5-wetypex-el10/HANDOFF.md](fcitx5-wetypex-el10/HANDOFF.md)。
 
 ## 原作者项目
 
@@ -66,7 +64,7 @@ sudo dnf install fcitx5-wetypex fcitx5-configtool fcitx5-gtk
 
 ## 复现构建
 
-在装好工具链的 EL10 机器上（前置依赖见 HANDOFF.md：EPEL10+CRB、gcc/cmake/ninja/rpmbuild/clang 21、KF6 全套 devel 等；源码下载可走代理）：
+在装好工具链的 EL10 机器上（前置：EPEL10+CRB 仓库、gcc/cmake/ninja/rpmbuild/clang 21、KF6 全套 devel 等；源码下载可走代理）：
 
 ```bash
 # 1. 源码 tarball 放 ~/rpmbuild/SOURCES/，按链条构建：
@@ -85,10 +83,8 @@ createrepo_c ~/el10-repo && ./fcitx5-wetypex-el10/build-bundle.sh
 ├── README.md                  ← 本文件
 ├── el10-local.repo.example    ← 本地 dnf 仓库配置示例
 ├── fcitx5-wetypex-el10/      ← 工作树（git 主体）
-│   ├── HANDOFF.md             ← 完整交接文档
 │   ├── specs/                 ← 7 个已沉淀修正的 RPM spec
 │   ├── build-bundle.sh        ← 一键安装包构建脚本（可复现）
-│   ├── sync-to-debian.sh      ← 回传构建机脚本（按需改 SSH/路径）
 │   └── fcitx5-wetypex/        ← 上游 WeTypeX v3.0.1.684 源码快照（vendored，MIT）
 ├── el10-repo/                 ← 本地构建产物（git 忽略，走 Releases）
 └── src-rpms/                  ← 源码 RPM（git 忽略，走 Releases）

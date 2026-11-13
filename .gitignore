@@ -6,3 +6,7 @@
 # 第三方静态二进制（复现构建时从上游下载）
 /fcitx5-wetypex-el10/tools/nfpm
 /fcitx5-wetypex-el10/tools/nfpm.tar.gz
+
+# 本机私有文档与脚本，不上传
+/fcitx5-wetypex-el10/HANDOFF.md
+/fcitx5-wetypex-el10/sync-to-debian.sh
