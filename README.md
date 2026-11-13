@@ -31,10 +31,10 @@ WeTypeX 由 [panxuc](https://github.com/panxuc) 开发，上游仓库：**https:
 
 ### 方式 A：一键安装（推荐，离线）
 
-从 [Releases](../../releases) 下载 `wetypex-el10-bundle-*.run`：
+从 [Releases](../../releases) 下载 `fcitx5-wetypex-*-bundle.el10.x86_64.run`：
 
 ```bash
-sudo ./wetypex-el10-bundle-3.0.1.684-6.el10.x86_64.run
+sudo ./fcitx5-wetypex-3.0.1.684-5-bundle.el10.x86_64.run
 # 自动：SHA 自校验 → 装 epel-release → dnf 装 9 个运行时 RPM（外部依赖走发行版仓库）
 #     → 以 SUDO_USER 身份执行 fcitx5-wetypex-setup --download --accept-upstream-license
 #     → fcitx5-wetypex-setup --check --transport
@@ -45,7 +45,7 @@ sudo ./wetypex-el10-bundle-3.0.1.684-6.el10.x86_64.run
 
 ### 方式 B：本地仓库
 
-从 Releases 下载 `el10-repo-runtime-*.tar.gz` 解压后：
+从 Releases 下载 `fcitx5-wetypex-*-rpms.el10.x86_64.tar.gz` 解压后：
 
 ```bash
 sudo tee /etc/yum.repos.d/el10-local.repo <<'EOF'
