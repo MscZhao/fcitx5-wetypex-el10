@@ -4,5 +4,5 @@
 /dist/
 
 # 第三方静态二进制（复现构建时从上游下载）
-/wetypex-el10/tools/nfpm
-/wetypex-el10/tools/nfpm.tar.gz
+/fcitx5-wetypex-el10/tools/nfpm
+/fcitx5-wetypex-el10/tools/nfpm.tar.gz

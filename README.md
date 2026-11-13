@@ -4,7 +4,7 @@
 
 > 背景：EPEL 10 完全没有 fcitx5 生态包。本项目在 AlmaLinux 10.2 x86_64 上从源码构建整套 `.el10` RPM，让 WeTypeX（MIT 适配器 + 用户自行下载的腾讯 WeType 运行时）能在 EL10 系发行版上通过 Fcitx5 正常使用。
 >
-> 完整交接文档见 [wetypex-el10/HANDOFF.md](wetypex-el10/HANDOFF.md)。
+> 完整交接文档见 [fcitx5-wetypex-el10/HANDOFF.md](fcitx5-wetypex-el10/HANDOFF.md)。
 
 ## 原作者项目
 
@@ -74,9 +74,9 @@ sudo dnf install fcitx5-wetypex fcitx5-configtool fcitx5-gtk
 for s in xcb-imdkit libcxx fcitx5 fcitx5-qt fcitx5-gtk libime fcitx5-configtool; do
   rpmbuild -ba ~/rpmbuild/SPECS/$s.spec && sudo dnf install -y ~/rpmbuild/RPMS/x86_64/$s-*.rpm
 done
-# 2. wetypex staging（spec 与打包模板见 wetypex-el10/）
+# 2. wetypex staging（spec 与打包模板见 fcitx5-wetypex-el10/）
 # 3. 刷新仓库 + 一键包
-createrepo_c ~/el10-repo && ./wetypex-el10/build-bundle.sh
+createrepo_c ~/el10-repo && ./fcitx5-wetypex-el10/build-bundle.sh
 ```
 
 ## 仓库结构
@@ -84,7 +84,7 @@ createrepo_c ~/el10-repo && ./wetypex-el10/build-bundle.sh
 ```
 ├── README.md                  ← 本文件
 ├── el10-local.repo.example    ← 本地 dnf 仓库配置示例
-├── wetypex-el10/              ← 工作树（git 主体）
+├── fcitx5-wetypex-el10/      ← 工作树（git 主体）
 │   ├── HANDOFF.md             ← 完整交接文档
 │   ├── specs/                 ← 7 个已沉淀修正的 RPM spec
 │   ├── build-bundle.sh        ← 一键安装包构建脚本（可复现）
@@ -97,6 +97,6 @@ createrepo_c ~/el10-repo && ./wetypex-el10/build-bundle.sh
 ## 许可与声明
 
 - 本仓库的 spec、脚本、文档：[MIT](LICENSE)
-- vendored 的 `wetypex-el10/fcitx5-wetypex/` 源码：上游 [panxuc/fcitx5-wetypex](https://github.com/panxuc/fcitx5-wetypex) 的 MIT 许可，随快照保留其 LICENSE 与 NOTICE
+- vendored 的 `fcitx5-wetypex-el10/fcitx5-wetypex/` 源码：上游 [panxuc/fcitx5-wetypex](https://github.com/panxuc/fcitx5-wetypex) 的 MIT 许可，随快照保留其 LICENSE 与 NOTICE
 - **本仓库不包含、不分发腾讯 WeType（微信输入法）的任何专有二进制、词典、模型或资源**；运行时由用户在安装时通过 `fcitx5-wetypex-setup --download` 自行从官方渠道获取
 - WeTypeX 是非官方第三方项目，与腾讯公司无任何关联或背书关系；"微信""微信输入法"相关商标归腾讯所有，仅供个人学习交流使用

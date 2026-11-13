@@ -10,7 +10,7 @@
 - 本地仓库 `~/el10-repo/`（30 个 RPM + repodata，dnf 配置 `/etc/yum.repos.d/el10-local.repo` 默认 disabled）
 - `fcitx5-wetypex-3.0.1.684-6.el10` 经本地仓库整链解析安装成功，postinstall 正常执行
 - `ldd wcwss_bridge.so` 解析到自建 libcxx 21.1.8 ✅；`wetypex.so`/`libwetypexconfig.so`/configtool 依赖无缺失；`fcitx5 --version` = 5.1.23
-- 7 个 spec 已全部同步回 `~/wetypex-el10/specs/`（与 ~/rpmbuild/SPECS 一致）
+- 7 个 spec 已全部同步回 `~/fcitx5-wetypex-el10/specs/`（与 ~/rpmbuild/SPECS 一致）
 - 除 fcitx5 外其余组件均已是上游最新（gtk 5.1.7 / qt 5.1.16 / libime 1.1.17 / configtool 5.1.16 / xcb-imdkit 1.0.9）；LLVM 上游已到 23.1.5 但评估后**不升**（EPEL10 clang 为 21.1.8，libc++ 跨大版本 ABI 风险，现链已验证）
 
 **5.1.23 升级要点**：
@@ -22,7 +22,7 @@
 
 ### 一键安装 bundle（2026-11-14 新增）
 - 产物：`~/el10-repo/wetypex-el10-bundle-3.0.1.684-6.el10.x86_64.run`（15MB，自解压单文件）
-- 构建脚本：`~/wetypex-el10/build-bundle.sh`（运行时 9 主包集合 = 8 包链条去掉 devel/debuginfo；**libime-data 已拆为独立子包**，zh_CN.lm 45MB 是 chinese-addons/table 引擎数据，WeTypeX 用不到）
+- 构建脚本：`~/fcitx5-wetypex-el10/build-bundle.sh`（运行时 9 主包集合 = 8 包链条去掉 devel/debuginfo；**libime-data 已拆为独立子包**，zh_CN.lm 45MB 是 chinese-addons/table 引擎数据，WeTypeX 用不到）
 - 安装器流程：sha256 自校验 → 预检（x86_64 / RHEL 系 / EL10 / root）→ 自动装 epel-release → `dnf install rpms/*.rpm`（系统依赖从发行版仓库自动解析）→ **自动以 SUDO_USER 身份执行 `fcitx5-wetypex-setup --download --accept-upstream-license`**（runtime 是用户态数据，root 直跑无 SUDO_USER 时退化为打印手动命令）→ 成功后自动跑 `--check --transport` → 按结果打印条件化后续步骤
 - 参数：默认=安装+自动下载；`--no-download` 跳过运行时下载；`--extract-only [目录]` 只解包
 - 已验证：自解压 + SHA 校验 OK；空 rpmdb installroot 模拟新机 → 365 包全量解析成功（321M 下载，外系统依赖全来自 EPEL/AppStream）；本机全流程实测：dnf 安装 → SUDO_USER 下载/校验运行时 → `core_ready: true` / `transport_checked: true`
@@ -31,7 +31,7 @@
 
 ### 仅剩：回传 Debian 机 + 更新其仓库文档（被隧道阻断）
 - Debian 机反向隧道 `ssh -p2222 psm@127.0.0.1` 持续拒连（Connection refused）
-- 一键回传脚本已备好：`~/wetypex-el10/sync-to-debian.sh <目标目录>`（隧道恢复后执行即可）
+- 一键回传脚本已备好：`~/fcitx5-wetypex-el10/sync-to-debian.sh <目标目录>`（隧道恢复后执行即可）
 - 待办：scp `~/el10-repo/*.rpm`（30 个，fcitx5 5.1.23 链条 + wetypex 6.el10）→ Debian 机 `dist/el10/`；更新其 `packaging/el10/` 的 build-el10.sh（版本 5.1.12→**5.1.23**、加 json-devel、plasma-wayland-protocols-devel、librsvg2-devel、cairo/pango/glib2-devel、kf6-kitemviews/kpackage/kiconthemes/ksvg/kcmutils/libplasma-devel、configtool spec、wayland-protocols 版本下限 sed 说明）和 README.md
 
 ## 任务目标（原始记录）
@@ -47,9 +47,9 @@ EPEL 10 **完全没有** fcitx5 生态包（已查证镜像目录），目标是
 - **全部构建依赖已装齐**，包括 KF6 全套 devel（configtool 用，6.25.0）、qt6-qtbase-private-devel、gtk3/gtk4-devel、boost/json-c/expat/fmt/libuv/enchant2/iso-codes 等
 - 代理可用：`--socks5-hostname 127.0.0.1:10808`（download.fcitx-im.org 直连很慢且易断，务必走代理 + 断点续传）
 - 源码包全在 `~/rpmbuild/SOURCES/`：llvm-project-llvmorg-21.1.8.tar.gz(232M)、libime-1.1.17_dict.tar.zst(82M)、fcitx5-5.1.17_dict.tar.zst(8.1M)、fcitx5-gtk-5.1.7.tar.zst、fcitx5-qt-5.1.16.tar.zst、fcitx5-configtool-5.1.16.tar.zst(155K)、xcb-imdkit-1.0.9.tar.xz(990K，git clone --recurse-submodules 自制，无上游 tarball)
-- spec 文件：`~/wetypex-el10/specs/*.spec`（7 个，已按踩坑修正）
-- nfpm v2.47.0 静态二进制：`~/wetypex-el10/tools/nfpm`
-- wetypex 源码树：`~/wetypex-el10/fcitx5-wetypex/`（v3.0.1.684，与 Debian 机 git 仓库一致）
+- spec 文件：`~/fcitx5-wetypex-el10/specs/*.spec`（7 个，已按踩坑修正）
+- nfpm v2.47.0 静态二进制：`~/fcitx5-wetypex-el10/tools/nfpm`
+- wetypex 源码树：`~/fcitx5-wetypex-el10/fcitx5-wetypex/`（v3.0.1.684，与 Debian 机 git 仓库一致）
 
 ### 已产出并安装的 RPM（`~/rpmbuild/RPMS/x86_64/`）
 | 包 | 状态 |
@@ -84,7 +84,7 @@ KF6 依赖已装齐。builddep 后直接 `rpmbuild -ba`。%files 按实际安装
 
 ### 4. fcitx5-wetypex 打包
 ```bash
-cd ~/wetypex-el10/fcitx5-wetypex
+cd ~/fcitx5-wetypex-el10/fcitx5-wetypex
 WETYPE_LAYER_SHELL=ON packaging/container-stage.sh /tmp/el10-root lib64
 # 注意 container-stage.sh 里写死了 cmake -S /src —— 本机路径不同，需 sed 成实际路径或临时复制
 sed -e "s|@WETYPEX_VERSION@|3.0.1.684|g" -e "s|@WETYPEX_RELEASE@|5.el10|g" \
@@ -92,7 +92,7 @@ sed -e "s|@WETYPEX_VERSION@|3.0.1.684|g" -e "s|@WETYPEX_RELEASE@|5.el10|g" \
     packaging/nfpm.yaml > /tmp/nfpm-el10.yaml
 # 依赖调整（rpm 段）：保留 fcitx5/fcitx5-qt-libfcitx5qt6widgets/libime，新增 libcxx；
 # ffmpeg/wl-clipboard/libnotify/pipewire-utils 改成弱依赖（Recommends，EL10 无 ffmpeg）
-~/wetypex-el10/tools/nfpm package --config /tmp/nfpm-el10.yaml --packager rpm --target ~/el10-repo/
+~/fcitx5-wetypex-el10/tools/nfpm package --config /tmp/nfpm-el10.yaml --packager rpm --target ~/el10-repo/
 ```
 wetypex 硬依赖（CMakeLists.txt:143 起）：clang++ + `-stdlib=libc++`（用我们的 libcxx）、Fcitx5Core≥5.0.14、LibIMEPinyin≥1.0.11、Qt6≥6.2、qt6-qtwebengine（EPEL10 有 6.10.1）、layer-shell-qt（EPEL10 有 6.6.4）。
 

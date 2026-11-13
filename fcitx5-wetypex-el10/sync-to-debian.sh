@@ -12,7 +12,7 @@ $SSH true 2>/dev/null || { echo "❌ SSH -p2222 psm@127.0.0.1 不可达（隧道
 $SSH "mkdir -p $DEST"
 rsync -av --info=progress2 -e "$SSH" /home/psm/el10-repo/*.rpm "$DEST"/
 rsync -av -e "$SSH" /home/psm/el10-repo/*.run "$DEST"/
-rsync -av -e "$SSH" /home/psm/wetypex-el10/specs/ "$DEST"/../specs/ 2>/dev/null || \
-  rsync -av -e "$SSH" /home/psm/wetypex-el10/specs/ "$DEST"/specs/
+rsync -av -e "$SSH" /home/psm/fcitx5-wetypex-el10/specs/ "$DEST"/../specs/ 2>/dev/null || \
+  rsync -av -e "$SSH" /home/psm/fcitx5-wetypex-el10/specs/ "$DEST"/specs/
 
 echo "✅ 回传完成：$(ls /home/psm/el10-repo/*.rpm | wc -l) 个 RPM + $(ls /home/psm/el10-repo/*.run 2>/dev/null | wc -l) 个一键安装包 + specs/"
