@@ -4,7 +4,13 @@
 
 > 背景：EPEL 10 完全没有 fcitx5 生态包。本项目在 AlmaLinux 10.2 x86_64 上从源码构建整套 `.el10` RPM，让 WeTypeX（MIT 适配器 + 用户自行下载的腾讯 WeType 运行时）能在 EL10 系发行版上通过 Fcitx5 正常使用。
 >
-> 完整踩坑记录见 [wetypex-el10/HANDOFF.md](wetypex-el10/HANDOFF.md) —— **写 spec / 复现构建前必读**。
+> 完整交接文档见 [wetypex-el10/HANDOFF.md](wetypex-el10/HANDOFF.md)。
+
+## 原作者项目
+
+WeTypeX 由 [panxuc](https://github.com/panxuc) 开发，上游仓库：**https://github.com/panxuc/fcitx5-wetypex**
+
+本仓库仅做 EL10 平台的 RPM 打包与适配，不修改上游功能；问题反馈请区分：上游功能问题到原作者仓库提 Issue，本仓库只处理 EL10 打包问题。
 
 ## 产出（8 包链条，全部构建 + 验证通过）
 
@@ -79,7 +85,7 @@ createrepo_c ~/el10-repo && ./wetypex-el10/build-bundle.sh
 ├── README.md                  ← 本文件
 ├── el10-local.repo.example    ← 本地 dnf 仓库配置示例
 ├── wetypex-el10/              ← 工作树（git 主体）
-│   ├── HANDOFF.md             ← 完整交接文档 + 踩坑记录 12 条
+│   ├── HANDOFF.md             ← 完整交接文档
 │   ├── specs/                 ← 7 个已沉淀修正的 RPM spec
 │   ├── build-bundle.sh        ← 一键安装包构建脚本（可复现）
 │   ├── sync-to-debian.sh      ← 回传构建机脚本（按需改 SSH/路径）
@@ -87,16 +93,6 @@ createrepo_c ~/el10-repo && ./wetypex-el10/build-bundle.sh
 ├── el10-repo/                 ← 本地构建产物（git 忽略，走 Releases）
 └── src-rpms/                  ← 源码 RPM（git 忽略，走 Releases）
 ```
-
-## 关键踩坑（完整 12 条见 HANDOFF.md）
-
-1. EL10 的 nlohmann-json 包名是 **json-devel**；fcitx5 5.1.20+ 需 plasma-wayland-protocols-devel、librsvg2-devel
-2. wayland-protocols 上游要 ≥1.46、EL10 只有 1.45（所需协议 XML 全在），spec %prep 里 sed 降级
-3. %files soname glob：`libX.so.2*` 匹配不到 `libX.so.5.1.16`，用 `libX.so.*`；libime 库名是驼峰 `libIMECore/Pinyin/Table`
-4. configtool 额外需要 KF6ItemViews/IconThemes/Package/Svg(KSvg)/KCMUtils/Plasma(libplasma)
-5. 换 fcitx5 版本 = 所有链接 Fcitx5Core 的包全部重编（soname 带完整版本号）
-6. wetypex staging：`container-stage.sh` 写死 `cmake -S /src`，用符号链接解决；BundledCurl 需 `ALL_PROXY` 走代理
-7. bundle 安装器末尾必须 `exit 0`，否则 bash 读穿 payload 执行二进制乱码
 
 ## 许可与声明
 
