@@ -43,6 +43,15 @@ sudo ./fcitx5-wetypex-3.0.1.684-5-bundle.el10.x86_64.run
 
 装完：重启 fcitx5（`fcitx5 -r -d`；GNOME Wayland 配 environment.d：`GTK_IM_MODULE=fcitx`、`QT_IM_MODULE=fcitx`、`XMODIFIERS=@im=fcitx`），然后用 `fcitx5-configtool` 把 WeTypeX 加入输入法列表。
 
+> **可选功能**：『音频文件转写』需要 `ffmpeg`（EL10 官方仓库不提供）。需要时启用 RPM Fusion 安装即可，装完自动生效，无需重装本包：
+>
+> ```bash
+> sudo dnf install https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-10.noarch.rpm
+> sudo dnf install ffmpeg
+> ```
+>
+> 麦克风语音输入走 pw-record/parec，不依赖 ffmpeg；一键安装器会在缺 ffmpeg 时打印上述提示。
+
 ### 方式 B：本地仓库
 
 从 Releases 下载 `fcitx5-wetypex-*-rpms.el10.x86_64.tar.gz` 解压后：

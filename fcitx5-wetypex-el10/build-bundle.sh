@@ -123,6 +123,14 @@ else
   echo "==> 已跳过运行时自动下载（--no-download）"
 fi
 
+step "可选功能检查"
+if ! command -v ffmpeg >/dev/null 2>&1; then
+  echo "  ℹ️  未检测到 ffmpeg：『音频文件转写』功能不可用（麦克风语音输入不受影响）。"
+  echo "     如需该功能，可启用 RPM Fusion 并安装 ffmpeg，装完即自动生效："
+  echo "       sudo dnf install https://mirrors.rpmfusion.org/free/el/rpmfusion-free-release-10.noarch.rpm"
+  echo "       sudo dnf install ffmpeg"
+fi
+
 step "安装完成。后续步骤："
 if [ "$DL_OK" = 1 ]; then cat <<'POST'
   ✓ 腾讯官方 WeType 运行时已自动下载并安装（以 SUDO_USER 身份）。
