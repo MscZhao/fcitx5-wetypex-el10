@@ -2,6 +2,7 @@
 /el10-repo/
 /src-rpms/
 /dist/
+/ci-out/
 
 # 第三方静态二进制（复现构建时从上游下载）
 /fcitx5-wetypex-el10/tools/nfpm

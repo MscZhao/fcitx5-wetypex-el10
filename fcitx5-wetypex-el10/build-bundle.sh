@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 # 将 WeTypeX EL10 运行时 RPM（8 包链条的主包）打包成自解压一键安装 .run
-# 产物: wetypex-el10-bundle-<ver>.run   用法见包内 install.sh
+# 产物: fcitx5-wetypex-<ver>-bundle.el10.x86_64.run（<ver> = 上游版本号，如 3.0.1.684-5）   用法见包内 install.sh
 set -euo pipefail
 
-REPO=${REPO:-/home/psm/el10-repo}
-OUT=${OUT:-/home/psm/el10-repo}
+REPO=${REPO:-$PWD/el10-repo}
+OUT=${OUT:-$PWD/el10-repo}
 
 WETYPEX_RPM=$(ls -t "$REPO"/fcitx5-wetypex-*.rpm | head -1)
-BUNDLE_VER=$(basename "$WETYPEX_RPM" .rpm | sed 's/^fcitx5-wetypex-//')   # 例: 3.0.1.684-6.el10
+BUNDLE_VER=$(basename "$WETYPEX_RPM" | sed 's/^fcitx5-wetypex-//; s/\.x86_64\.rpm$//')   # 例: 3.0.1.684-6.el10
+WETYPE_VER=${BUNDLE_VER%.el10}                                            # 例: 3.0.1.684-6
 STAGE=$(mktemp -d /tmp/wetypex-bundle.XXXXXX)
 trap 'rm -rf "$STAGE"' EXIT
 mkdir "$STAGE/rpms"
@@ -34,7 +35,7 @@ du -sh "$STAGE/rpms/"
 cat > "$STAGE/install.sh" <<'INSTALLER'
 #!/bin/bash
 # WeTypeX EL10 一键安装包（自解压 .run，内嵌 RPM，无需配置任何仓库）
-# 用法: ./wetypex-el10-bundle-*.run [--extract-only [目录]]
+# 用法: ./fcitx5-wetypex-*-bundle.el10.x86_64.run [--extract-only [目录]]
 set -euo pipefail
 
 BUNDLE_VERSION="@VER@"
@@ -169,7 +170,7 @@ sed -i "s|@@SKIP@@|$SKIP|" "$STAGE/install.sh"
 
 # 组装：脚本头 + gzip payload
 tar czf "$STAGE/payload.tar.gz" -C "$STAGE" rpms SHA256SUMS
-RUN="$OUT/wetypex-el10-bundle-$BUNDLE_VER.run"
+RUN="$OUT/fcitx5-wetypex-${WETYPE_VER}-bundle.el10.x86_64.run"
 cat "$STAGE/install.sh" "$STAGE/payload.tar.gz" > "$RUN"
 chmod +x "$RUN"
 

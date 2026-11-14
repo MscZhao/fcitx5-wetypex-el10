@@ -1,0 +1,46 @@
+name: Build EL10 RPMs
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build-el10:
+    runs-on: ubuntu-latest
+    container:
+      image: almalinux:10
+    steps:
+      - name: Install git (needed by checkout in fresh container)
+        run: dnf install -y git
+
+      - name: Checkout (with wetypex submodule)
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build full chain + bundle
+        run: bash fcitx5-wetypex-el10/el10/build-el10.sh
+        env:
+          JOBS: '4'
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: el10-release-assets
+          path: ci-out/*
+          if-no-files-found: error
+
+      - name: Publish release (tag builds only)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ci-out/fcitx5-wetypex-*-bundle.el10.x86_64.run
+            ci-out/fcitx5-wetypex-*-rpms.el10.x86_64.tar.gz
+            ci-out/fcitx5-wetypex-el10-src-rpms.tar.gz
+            ci-out/SHA256SUMS
+          body_path: ci-out/release-notes.md

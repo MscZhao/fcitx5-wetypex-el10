@@ -66,7 +66,9 @@ sudo dnf install fcitx5-wetypex fcitx5-configtool fcitx5-gtk
 
 ## 复现构建
 
-在装好工具链的 EL10 机器上（前置：EPEL10+CRB 仓库、gcc/cmake/ninja/rpmbuild/clang 21、KF6 全套 devel 等；源码下载可走代理）：
+**方式一：GitHub Actions（推荐）**——本仓库自带 [build-el10.yml](.github/workflows/build-el10.yml)：在 Actions 页手动触发（Run workflow）出构建 Artifacts；推送 `v*` tag 自动构建并发布 Release。全链在 `almalinux:10` 容器内完成，逻辑集中在 [fcitx5-wetypex-el10/el10/build-el10.sh](fcitx5-wetypex-el10/el10/build-el10.sh)（本机 EL10 也可直接复跑）。
+
+**方式二：本机 EL10 手动构建**——在装好工具链的 EL10 机器上（前置：EPEL10+CRB 仓库、gcc/cmake/ninja/rpmbuild/clang 21、KF6 全套 devel 等；源码下载可走代理）：
 
 ```bash
 # 0. 克隆本仓库并拉取上游 submodule（WeTypeX 源码）
