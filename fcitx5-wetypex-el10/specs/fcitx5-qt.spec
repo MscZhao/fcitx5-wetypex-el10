@@ -12,6 +12,7 @@ BuildRequires:  gcc-c++
 BuildRequires:  cmake
 BuildRequires:  ninja-build
 BuildRequires:  qt6-qtbase-devel
+BuildRequires:  qt6-qtbase-private-devel
 
 Requires:       fcitx5
 

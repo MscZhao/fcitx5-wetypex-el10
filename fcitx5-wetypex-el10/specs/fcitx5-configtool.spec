@@ -24,6 +24,11 @@ BuildRequires:  kf6-kwidgetsaddons-devel
 BuildRequires:  kf6-kdeclarative-devel
 BuildRequires:  kf6-kguiaddons-devel
 BuildRequires:  kf6-kirigami-devel
+BuildRequires:  kf6-kiconthemes-devel
+BuildRequires:  kf6-kpackage-devel
+BuildRequires:  kf6-ksvg-devel
+BuildRequires:  kf6-kcmutils-devel
+BuildRequires:  libplasma-devel
 BuildRequires:  qt6-qtdeclarative-devel
 BuildRequires:  xkeyboard-config-devel
 BuildRequires:  iso-codes-devel
