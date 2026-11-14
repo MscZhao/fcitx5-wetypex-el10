@@ -36,6 +36,7 @@ die(){ echo "❌ $*" >&2; exit 1; }
 fetch(){ # fetch <保存名> <url> —— 已存在则跳过（支持断点续跑）
   local out=$1 url=$2
   [ -s "$out" ] && { log "已有 $out，跳过下载"; return 0; }
+  log "下载 $url"
   curl -fL --retry 5 --retry-all-errors -C - -o "$out" "$url" || { rm -f "$out"; die "下载失败: $url"; }
 }
 
@@ -64,10 +65,11 @@ cp "$WT_DIR"/specs/*.spec "$RPMTOP/SPECS/"
 
 cd "$RPMTOP/SOURCES"
 fetch llvm-project-llvmorg-21.1.8.tar.gz https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-21.1.8.tar.gz
-fetch fcitx5-5.1.23_dict.tar.zst        https://download.fcitx-im.org/fcitx5/fcitx5-5.1.23_dict.tar.zst
+# 注意：fcitx-im.org 的 tarball 都在各自项目子目录下（/fcitx5/<project>/）
+fetch fcitx5-5.1.23_dict.tar.zst        https://download.fcitx-im.org/fcitx5/fcitx5/fcitx5-5.1.23_dict.tar.zst
 fetch fcitx5-qt-5.1.16.tar.zst          https://download.fcitx-im.org/fcitx5/fcitx5-qt/fcitx5-qt-5.1.16.tar.zst
 fetch fcitx5-gtk-5.1.7.tar.zst          https://download.fcitx-im.org/fcitx5/fcitx5-gtk/fcitx5-gtk-5.1.7.tar.zst
-fetch libime-1.1.17_dict.tar.zst        https://download.fcitx-im.org/fcitx5/libime-1.1.17_dict.tar.zst
+fetch libime-1.1.17_dict.tar.zst        https://download.fcitx-im.org/fcitx5/libime/libime-1.1.17_dict.tar.zst
 fetch fcitx5-configtool-5.1.16.tar.zst  https://download.fcitx-im.org/fcitx5/fcitx5-configtool/fcitx5-configtool-5.1.16.tar.zst
 
 # xcb-imdkit 无上游发布包：git clone 自制 tarball

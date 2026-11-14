@@ -7,7 +7,7 @@ Summary:        Input method framework with addon support
 License:        LGPL-2.1-or-later and GPL-2.0-or-later
 URL:            https://github.com/fcitx/fcitx5
 # _dict tarball carries dictionaries and git submodules
-Source0:        https://download.fcitx-im.org/fcitx5/%{name}-%{version}_dict.tar.zst
+Source0:        https://download.fcitx-im.org/fcitx5/%{name}/%{name}-%{version}_dict.tar.zst
 
 BuildRequires:  gcc-c++
 BuildRequires:  cmake

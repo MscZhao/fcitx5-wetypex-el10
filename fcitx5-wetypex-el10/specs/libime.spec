@@ -7,7 +7,7 @@ Summary:        Input method engine library used by fcitx5
 License:        LGPL-2.1-or-later and GPL-3.0-or-later
 URL:            https://github.com/fcitx/libime
 # _dict tarball carries the kenlm submodule and pretrained data
-Source0:        https://download.fcitx-im.org/fcitx5/%{name}-%{version}_dict.tar.zst
+Source0:        https://download.fcitx-im.org/fcitx5/%{name}/%{name}-%{version}_dict.tar.zst
 
 BuildRequires:  gcc-c++
 BuildRequires:  cmake
