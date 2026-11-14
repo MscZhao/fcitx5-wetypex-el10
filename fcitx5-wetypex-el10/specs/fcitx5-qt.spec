@@ -10,6 +10,7 @@ Source0:        https://download.fcitx-im.org/fcitx5/%{name}/%{name}-%{version}.
 
 BuildRequires:  gcc-c++
 BuildRequires:  cmake
+BuildRequires:  extra-cmake-modules
 BuildRequires:  ninja-build
 BuildRequires:  qt6-qtbase-devel
 BuildRequires:  qt6-qtbase-private-devel

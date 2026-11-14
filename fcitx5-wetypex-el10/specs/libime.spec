@@ -11,6 +11,7 @@ Source0:        https://download.fcitx-im.org/fcitx5/%{name}/%{name}-%{version}_
 
 BuildRequires:  gcc-c++
 BuildRequires:  cmake
+BuildRequires:  extra-cmake-modules
 BuildRequires:  ninja-build
 BuildRequires:  fcitx5-devel
 BuildRequires:  boost-devel

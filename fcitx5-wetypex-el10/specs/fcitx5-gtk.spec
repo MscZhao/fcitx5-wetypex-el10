@@ -10,6 +10,7 @@ Source0:        https://download.fcitx-im.org/fcitx5/%{name}/%{name}-%{version}.
 
 BuildRequires:  gcc-c++
 BuildRequires:  cmake
+BuildRequires:  extra-cmake-modules
 BuildRequires:  ninja-build
 BuildRequires:  pkgconf-pkg-config
 BuildRequires:  gtk3-devel

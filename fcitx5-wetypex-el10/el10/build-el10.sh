@@ -82,12 +82,14 @@ fi
 rm -f llvm-project-llvmorg-21.1.8.tar.gz.asc 2>/dev/null || true
 
 # ========== 3. 按链条构建 7 个 RPM ==========
+rm -f "$RPMTOP"/RPMS/x86_64/*.rpm "$RPMTOP"/SRPMS/*.rpm 2>/dev/null || true   # 清掉上一轮产物（含旧 debuginfo）
 CHAIN="xcb-imdkit libcxx fcitx5 fcitx5-qt fcitx5-gtk libime fcitx5-configtool"
 for s in $CHAIN; do
   log "dnf builddep $s"
   dnf builddep -y "$RPMTOP/SPECS/$s.spec"
   log "rpmbuild -ba $s"
-  if ! rpmbuild --define "_topdir $RPMTOP" -ba "$RPMTOP/SPECS/$s.spec" > "$OUT_DIR/logs/$s.log" 2>&1; then
+  # debug_package %{nil}: CI 不发布 debuginfo，跳过以提速并避免 debuginfo 子包依赖冲突
+  if ! rpmbuild --define "_topdir $RPMTOP" --define 'debug_package %{nil}' -ba "$RPMTOP/SPECS/$s.spec" > "$OUT_DIR/logs/$s.log" 2>&1; then
     tail -n 80 "$OUT_DIR/logs/$s.log" || true
     die "$s 构建失败（完整日志 $OUT_DIR/logs/$s.log）"
   fi
@@ -111,6 +113,11 @@ WETYPEX_RELEASE=${WETYPEX_RELEASE:-$(sed -n 's/^pkgrel=//p' "$WETYPEX_SRC/packag
 [ -n "$WETYPEX_RELEASE" ] || die "无法确定 release 号（PKGBUILD.in pkgrel / \$WETYPEX_RELEASE）"
 
 log "wetypex staging（v$WETYPEX_VERSION, release $WETYPEX_RELEASE.el10）"
+# wetypex 自身的构建依赖（spec 链条之外）：Qt6 全家桶 + layer-shell + pkg-config 依赖
+# （对照上游 packaging/docker/fedora.Dockerfile 的清单）
+log "安装 wetypex 构建依赖（qt6-qtwebengine-devel 约 1GB，耐心）"
+dnf install -y qt6-qtbase-devel qt6-qtsvg-devel qt6-qtwebengine-devel layer-shell-qt-devel \
+  json-c-devel fontconfig-devel wayland-devel openssl-devel
 rm -rf "$SRC_MOUNT" "$STAGE" /tmp/wetypex-build
 cp -a "$WETYPEX_SRC" "$SRC_MOUNT"        # container-stage.sh 写死 cmake -S /src
 ( cd "$SRC_MOUNT" && WETYPEX_LAYER_SHELL=ON WETYPEX_BUILD_JOBS=$JOBS \
@@ -145,6 +152,7 @@ sed -i -e "s|@WETYPEX_VERSION@|$WETYPEX_VERSION|g" \
 # ========== 6. 汇聚仓库 + createrepo + bundle ==========
 REPO_DIR=$OUT_DIR/repo
 mkdir -p "$REPO_DIR"
+rm -f "$RPMTOP"/RPMS/x86_64/*debuginfo-*.rpm "$RPMTOP"/RPMS/x86_64/*debugsource-*.rpm   # 清掉历史轮次遗留
 cp "$RPMTOP"/RPMS/x86_64/*.rpm "$REPO_DIR"/
 log "nfpm package fcitx5-wetypex"
 nfpm package --config /tmp/nfpm-el10.yaml --packager rpm --target "$REPO_DIR/"
@@ -155,7 +163,8 @@ REPO="$REPO_DIR" OUT="$REPO_DIR" bash "$WT_DIR/build-bundle.sh" > "$OUT_DIR/logs
   || { tail -n 40 "$OUT_DIR/logs/build-bundle.log"; die "bundle 构建失败"; }
 WETYPE_RPM=$(ls -t "$REPO_DIR"/fcitx5-wetypex-[0-9]*.rpm | head -1)
 NVR=$(basename "$WETYPE_RPM" .x86_64.rpm)          # fcitx5-wetypex-3.0.1.684-5.el10
-WETYPE_VER=${NVR#fcitx5-wetypex-}                  # 3.0.1.684-5
+WETYPE_VER=${NVR#fcitx5-wetypex-}                  # 3.0.1.684-5.el10
+WETYPE_VER=${WETYPE_VER%.el10}                     # 3.0.1.684-5
 BUNDLE=$(ls -t "$REPO_DIR"/fcitx5-wetypex-*bundle*.run | head -1)
 
 # ========== 7. Release 资产（运行时仓库包 / 源码包 / 校验 / 说明） ==========

@@ -14,9 +14,11 @@ Source0:        %{name}-%{version}.tar.xz
 
 BuildRequires:  gcc-c++
 BuildRequires:  cmake
+BuildRequires:  extra-cmake-modules
 BuildRequires:  ninja-build
 BuildRequires:  pkgconf-pkg-config
 BuildRequires:  libxcb-devel
+BuildRequires:  xcb-util-devel
 BuildRequires:  xcb-util-keysyms-devel
 BuildRequires:  zlib-devel
 
