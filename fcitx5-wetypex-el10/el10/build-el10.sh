@@ -116,8 +116,9 @@ log "wetypex staging（v$WETYPEX_VERSION, release $WETYPEX_RELEASE.el10）"
 # wetypex 自身的构建依赖（spec 链条之外）：Qt6 全家桶 + layer-shell + pkg-config 依赖
 # （对照上游 packaging/docker/fedora.Dockerfile 的清单）
 log "安装 wetypex 构建依赖（qt6-qtwebengine-devel 约 1GB，耐心）"
+# rustc ≥1.73 为离线语音（localvoice）硬要求（上游 LocalVoice.cmake，仅用标准库无需 cargo）
 dnf install -y qt6-qtbase-devel qt6-qtsvg-devel qt6-qtwebengine-devel layer-shell-qt-devel \
-  json-c-devel fontconfig-devel wayland-devel openssl-devel
+  json-c-devel fontconfig-devel wayland-devel openssl-devel rust
 rm -rf "$SRC_MOUNT" "$STAGE" /tmp/wetypex-build
 cp -a "$WETYPEX_SRC" "$SRC_MOUNT"        # container-stage.sh 写死 cmake -S /src
 ( cd "$SRC_MOUNT" && WETYPEX_LAYER_SHELL=ON WETYPEX_BUILD_JOBS=$JOBS \
@@ -151,6 +152,7 @@ sed -i -e "s|@WETYPEX_VERSION@|$WETYPEX_VERSION|g" \
 
 # ========== 6. 汇聚仓库 + createrepo + bundle ==========
 REPO_DIR=$OUT_DIR/repo
+rm -rf "$REPO_DIR"   # 防止复跑时新旧 NVR 混杂（repodata 会同时索引多版 wetypex）
 mkdir -p "$REPO_DIR"
 rm -f "$RPMTOP"/RPMS/x86_64/*debuginfo-*.rpm "$RPMTOP"/RPMS/x86_64/*debugsource-*.rpm   # 清掉历史轮次遗留
 cp "$RPMTOP"/RPMS/x86_64/*.rpm "$REPO_DIR"/
